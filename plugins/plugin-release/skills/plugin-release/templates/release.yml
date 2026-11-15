@@ -1,0 +1,89 @@
+name: release
+
+# Run from the Actions tab: pick patch, minor or major. The job bumps every version file listed
+# in release.config.json, runs the build, updates CHANGELOG.md, commits, tags, pushes to the
+# default branch and creates the GitHub release. Pull requests that touch the release tooling
+# run the same steps without publishing.
+#
+# Template from the plugin-release skill. Replace every __PLACEHOLDER__ before committing:
+#   __BRANCH__          default branch, e.g. main
+#   __RELEASE_SCRIPT__  path of release.ts in this repo, e.g. scripts/release.ts
+#   __CHECK__           dependency install plus everything that must pass before a release
+#                       (typecheck, build, tests), one command per line
+#   __TEST__            command that must pass on the bumped tree, or `true`
+# Pin each action to a commit SHA: gh api repos/<owner>/<action>/git/ref/tags/<tag>
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to bump
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+        required: true
+      dry_run:
+        description: Prepare and show the release without publishing
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - release.config.json
+      - __RELEASE_SCRIPT__
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/__BRANCH__'
+    runs-on: ubuntu-latest
+    env:
+      BUMP: ${{ inputs.bump || 'patch' }}
+      PUBLISH: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Check before release
+        run: |
+          __CHECK__
+
+      - name: Prepare release
+        id: prep
+        run: bun __RELEASE_SCRIPT__ "$BUMP" --notes-out "$RUNNER_TEMP/notes.md"
+
+      - name: Test the bumped tree
+        run: |
+          __TEST__
+
+      - name: Show the release
+        run: |
+          git status --short
+          git diff -- CHANGELOG.md
+          cat "$RUNNER_TEMP/notes.md"
+
+      - name: Commit, tag, push and create the GitHub release
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.prep.outputs.tag }}
+        run: |
+          gh auth setup-git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "chore(release): $TAG"
+          git tag -a "$TAG" -m "$TAG"
+          # Atomic, so the branch never gets a release commit without its tag or the other way round.
+          git push --atomic origin "HEAD:refs/heads/__BRANCH__" "refs/tags/$TAG"
+          gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag

@@ -1,0 +1,11 @@
+{
+  "versionSource": "plugins/plugin-release/.claude-plugin/plugin.json",
+  "versionFiles": [
+    { "path": "package.json", "key": ["version"] },
+    { "path": "plugins/plugin-release/package.json", "key": ["version"] },
+    { "path": "plugins/plugin-release/.claude-plugin/plugin.json", "key": ["version"] },
+    { "path": ".claude-plugin/marketplace.json", "key": ["plugins", 0, "version"] }
+  ],
+  "changelog": "CHANGELOG.md",
+  "tagPrefix": "v"
+}

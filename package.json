@@ -1,0 +1,20 @@
+{
+  "name": "plugin-release-skill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Skill that sets up semver releases with a changelog and GitHub releases for Claude Code and DSH plugin repos",
+  "type": "module",
+  "scripts": {
+    "check": "bun x tsc --noEmit",
+    "test": "bun test"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kolezka/plugin-release-skill.git"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "^7.0.2"
+  }
+}

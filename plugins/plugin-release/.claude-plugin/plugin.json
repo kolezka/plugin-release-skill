@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "plugin-release",
+  "version": "0.1.0",
+  "description": "Set up and run semver releases for Claude Code and DSH plugin repos: version bumps across manifests, CHANGELOG and GitHub releases.",
+  "author": { "name": "kolezka", "url": "https://github.com/kolezka" },
+  "homepage": "https://github.com/kolezka/plugin-release-skill",
+  "repository": "https://github.com/kolezka/plugin-release-skill",
+  "license": "MIT",
+  "keywords": ["release", "semver", "changelog", "github-actions", "plugin"]
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "plugin-release-skill",
+  "description": "Release tooling for agent plugin repos.",
+  "owner": { "name": "kolezka", "url": "https://github.com/kolezka" },
+  "plugins": [
+    {
+      "name": "plugin-release",
+      "source": "./plugins/plugin-release",
+      "description": "Set up and run semver releases for Claude Code and DSH plugin repos: version bumps across manifests, CHANGELOG and GitHub releases.",
+      "version": "0.1.0",
+      "category": "development",
+      "keywords": ["release", "semver", "changelog"]
+    }
+  ]
+}

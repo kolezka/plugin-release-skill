@@ -1,0 +1,4 @@
+# The plugin-release skill from the Claude Code plugin tree.
+- insert:
+    - id: claude-compat-plugin-release
+      name: '@kolezka/plugin-release-dsh'

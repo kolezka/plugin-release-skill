@@ -1,0 +1,81 @@
+name: release
+
+# Generated from plugins/plugin-release/skills/plugin-release/templates/release.yml.
+# Run from the Actions tab: pick patch, minor or major.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to bump
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+        required: true
+      dry_run:
+        description: Prepare and show the release without publishing
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - release.config.json
+      - plugins/plugin-release/skills/plugin-release/templates/release.ts
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      BUMP: ${{ inputs.bump || 'patch' }}
+      PUBLISH: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Check before release
+        run: |
+          bun install --frozen-lockfile
+          bun run check
+          bun test
+
+      - name: Prepare release
+        id: prep
+        run: bun plugins/plugin-release/skills/plugin-release/templates/release.ts "$BUMP" --notes-out "$RUNNER_TEMP/notes.md"
+
+      - name: Test the bumped tree
+        run: |
+          bun test
+
+      - name: Show the release
+        run: |
+          git status --short
+          git diff -- CHANGELOG.md
+          cat "$RUNNER_TEMP/notes.md"
+
+      - name: Commit, tag, push and create the GitHub release
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.prep.outputs.tag }}
+        run: |
+          gh auth setup-git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "chore(release): $TAG"
+          git tag -a "$TAG" -m "$TAG"
+          # Atomic, so the branch never gets a release commit without its tag or the other way round.
+          git push --atomic origin "HEAD:refs/heads/main" "refs/tags/$TAG"
+          gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
