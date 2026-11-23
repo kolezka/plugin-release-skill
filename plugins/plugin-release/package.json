@@ -10,7 +10,7 @@
   },
   "files": [".claude-plugin", "dsh", "skills"],
   "dependencies": {
-    "claude-plugin-dsh": "0.2.1"
+    "claude-plugin-dsh": "0.3.0"
   },
   "dsh": {
     "bundle": {
